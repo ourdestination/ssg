@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="bn"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Salary Sheet Generator</title>
+<style>
+:root{--bg:#f4f6fb;--fg:#1b2333;--card:#fff;--bd:#cfd6e4;--ac:#1f3864;--acf:#fff;--inp:#fff8e1;--mut:#667085;--tot:#e3e9f6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10141d;--fg:#e6eaf2;--card:#1a2030;--bd:#364058;--ac:#6f93e0;--acf:#0c1220;--inp:#2a2a1c;--mut:#9aa6bd;--tot:#252e45}}
+:root[data-theme="dark"]{--bg:#10141d;--fg:#e6eaf2;--card:#1a2030;--bd:#364058;--ac:#6f93e0;--acf:#0c1220;--inp:#2a2a1c;--mut:#9aa6bd;--tot:#252e45}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 Arial,Helvetica,sans-serif}
+.app{max-width:1400px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}.sub{color:var(--mut);margin:0 0 14px;font-size:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:14px}
+.card h2{font-size:14px;margin:0 0 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+label{display:block;font-size:11px;color:var(--mut)}
+input{width:100%;padding:5px 6px;border:1px solid var(--bd);border-radius:5px;background:var(--inp);color:var(--fg);font:inherit}
+button{font:inherit;cursor:pointer;border:1px solid var(--ac);background:var(--ac);color:var(--acf);border-radius:6px;padding:6px 12px}
+button.o{background:transparent;color:var(--ac)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}.bar .sp{flex:1}
+.tab.on{background:var(--ac);color:var(--acf)}.tab{background:transparent;color:var(--ac)}
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{border:1px solid var(--bd);padding:3px 5px;text-align:right;white-space:nowrap}
+th{background:var(--ac);color:var(--acf);text-align:center;white-space:normal}
+td.l{text-align:left}td input{min-width:70px;padding:3px}td.l input{min-width:110px}
+tr.tot td{background:var(--tot);font-weight:bold}
+.note{font-size:11px;color:var(--mut)}
+#ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);overflow:auto;padding:16px;z-index:9}
+#ov.show{display:block}
+.slips{max-width:760px;margin:0 auto}
+.slip{background:#fff;color:#000;border:1px solid #444;padding:16px;margin-bottom:14px;break-inside:avoid;page:slip}
+.slip h3{margin:0;text-align:center;font-size:16px}.slip p{margin:2px 0;text-align:center;font-size:12px}
+.slip table{margin-top:8px}.slip th{background:#1f3864;color:#fff}.slip td,.slip th{border-color:#888;color:inherit}
+.slip th{color:#fff}.slip td.l{text-align:left}.slip tr.tot td{background:#e3e9f6}
+.sig{display:flex;justify-content:space-between;margin-top:34px;font-size:12px}
+.sheetwrap{page:sheet}.ph{display:none;text-align:center;margin-bottom:8px}
+select{width:100%;padding:5px 6px;border:1px solid var(--bd);border-radius:5px;background:var(--inp);color:var(--fg);font:inherit}
+#certout{overflow-x:auto}
+.cert{background:#fff;color:#000;border:1px solid #444;padding:14px;max-width:760px;min-width:640px;margin:0 auto;font-size:11px;page:slip}
+.cert h3{margin:0;text-align:center;font-size:20px}.cert p{margin:2px 0;text-align:center;font-size:11px}
+.cert table{margin:4px 0;font-size:11px}.cert td,.cert th{border-color:#555;color:#000;padding:2px 5px;white-space:normal}.cert th{background:#1f3864;color:#fff}
+.cert td.l{text-align:left}.cert tr.tot td{background:#e3e9f6;font-weight:bold}.cert tr.blk td{background:#111;color:#fff;font-weight:bold}
+.cert .sec{font-weight:bold;margin-top:8px}.cert .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cert .info{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #555}.cert .info div{border:1px solid #555;padding:3px 5px}.cert .info small{display:block;color:#555;font-size:9px}
+@media print{.cert{font-size:10px;border:0;padding:0}.cert th,.cert tr.tot td,.cert tr.blk td{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@page sheet{size:A4 landscape;margin:10mm}@page slip{size:A4 portrait;margin:12mm}
+@media print{
+ body{background:#fff;color:#000}.app{padding:0;max-width:none}
+ .noprint,.act{display:none!important}
+ .card{border:0;padding:0;margin:0}.wrap{overflow:visible}
+ table{font-size:10px}th{background:#1f3864!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ td{color:#000}td input{border:0;background:none;color:#000;min-width:0;padding:0;text-align:right}td.l input{text-align:left}
+ tr.tot td{background:#e3e9f6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .ph{display:block}
+ body.slipmode .app{display:none}body.slipmode #ov{display:block;position:static;background:none;padding:0}
+ body:not(.slipmode) #ov{display:none!important}
+ .slip th,.slip tr.tot td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style></head>
+<body>
+<div class="app">
+ <div class="noprint"><h1>Salary Sheet Generator</h1>
+ <p class="sub">Private service &amp; Government service &middot; Print / Save as PDF</p></div>
+
+ <div class="card noprint"><h2>Settings</h2><div class="grid" id="set"></div>
+ <p class="note">Rate gulo example default. Nijer company policy / current govt. order onujayi change korun. Income Tax auto hoy na, manually boshan.</p></div>
+
+ <div class="bar noprint">
+  <button class="tab on" data-t="Private">Private Service</button>
+  <button class="tab" data-t="Govt">Govt. Service</button>
+  <button class="tab" data-t="Tax">Tax Certificate</button>
+  <span class="sp"></span>
+  <button class="o" id="add">+ Add employee</button>
+  <button class="o" id="allslips">All payslips</button>
+  <button id="prsheet">Print / PDF (Salary sheet)</button>
+ </div>
+
+ <div class="card sheetwrap">
+  <div class="ph"><b id="ph1" style="font-size:16px"></b><br><span id="ph2"></span></div>
+  <div class="wrap"><table id="tb"></table></div>
+  <div class="sig" id="sheetsig" style="display:none"></div>
+ </div>
+ <p class="note noprint" id="pdfnote">PDF er jonno: Print click kore destination e <b>Save as PDF</b> select korun.</p>
+ <div id="taxpane" style="display:none">
+  <div class="card noprint"><h2>Annual Income Tax Certificate (12 months ek sathe)</h2>
+   <div class="bar"><div style="min-width:240px"><label>Employee (Private + Govt list theke)</label><select id="emp"></select></div>
+    <button class="o" id="refill">Re-fill from monthly sheet (x12)</button><span class="sp"></span><button id="prcert">Print / PDF (Certificate)</button></div>
+   <div class="grid" id="tf"></div>
+   <p class="note">Monthly sheet er figure x 12 diye auto fill hoy (Bonus jemon ache temon thake). Actual annual figure onujayi edit korun. Tax slab / rebate rate Settings e ache - current NBR rule onujayi verify korun.</p></div>
+  <div id="certout"></div>
+ </div>
+</div>
+
+<div id="ov"><div class="slips">
+ <div class="bar noprint"><button id="prslip">Print / PDF</button><button class="o" id="close" style="background:var(--card)">Close</button></div>
+ <div id="slipbox"></div>
+</div></div>
+
+<script>
+const R=Math.round,n=v=>+v||0,fmt=v=>n(v).toLocaleString('en-IN'),$=s=>document.querySelector(s);
+const S={org:'Example Company Ltd.',month:'October 2026',days:30,p_hr:50,p_med:1500,p_conv:1000,p_pf:5,g_hr:50,g_med:1500,g_stamp:10,t_free:400000,a1:300000,r1:10,a2:400000,r2:15,a3:500000,r3:20,a4:2000000,r4:25,r5:30,rb_i:3,rb_v:10,rb_c:750000,mt:5000,ex_c:500000};
+const SL=[['org','Organization / Office','t'],['month','Salary month','t'],['days','Days in month','n'],
+['p_hr','Private: House rent %','n'],['p_med','Private: Medical (Tk)','n'],['p_conv','Private: Conveyance (Tk)','n'],['p_pf','Private: PF % of basic','n'],
+['g_hr','Govt: House rent %','n'],['g_med','Govt: Medical (Tk)','n'],['g_stamp','Govt: Revenue stamp (Tk)','n'],['t_free','Tax: free slab (Tk, male/general)','n'],['a1','Tax: slab 2 amount (Tk)','n'],['r1','Tax: slab 2 rate %','n'],['a2','Tax: slab 3 amount (Tk)','n'],['r2','Tax: slab 3 rate %','n'],['a3','Tax: slab 4 amount (Tk)','n'],['r3','Tax: slab 4 rate %','n'],['a4','Tax: slab 5 amount (Tk)','n'],['r4','Tax: slab 5 rate %','n'],['r5','Tax: balance rate %','n'],['rb_i','Rebate: % of taxable income','n'],['rb_v','Rebate: % of eligible investment','n'],['rb_c','Rebate: max cap (Tk)','n'],['mt','Minimum tax (Tk)','n'],['ex_c','Exempt cap on items 1-14 (Tk)','n']];
+const D=()=>n(S.days)||1;
+const T={
+Private:{title:'Salary Sheet - Private Service',
+ rows:[{id:'E-001',name:'Rahim Uddin',desig:'Executive',basic:30000,other:2000,bonus:1500,abs:0,tax:0,loan:1000,od:0}],
+ calc(r){const c={};c.hr=R(n(r.basic)*n(S.p_hr)/100);c.med=n(r.basic)?n(S.p_med):0;c.conv=n(r.basic)?n(S.p_conv):0;
+  c.gross=n(r.basic)+c.hr+c.med+c.conv+n(r.other)+n(r.bonus);c.absd=R((c.gross-n(r.bonus))/D()*n(r.abs));
+  c.pf=R(n(r.basic)*n(S.p_pf)/100);c.ded=c.absd+c.pf+n(r.tax)+n(r.loan)+n(r.od);c.net=c.gross-c.ded;return c},
+ cols:[['id','ID','t'],['name','Name','t'],['desig','Designation','t'],['basic','Basic','i'],['hr','House Rent','c'],['med','Medical','c'],['conv','Conveyance','c'],
+ ['other','Other Allowance','i'],['bonus','Overtime / Bonus','i'],['gross','Gross','c'],['abs','Days Absent','i'],['absd','Absent Deduction','c'],['pf','Provident Fund','c'],
+ ['tax','Income Tax (TDS)','i'],['loan','Loan / Advance','i'],['od','Other Deduction','i'],['ded','Total Deduction','c'],['net','Net Pay','c']],
+ earn:[['Basic',(r)=>r.basic],['House Rent',(r,c)=>c.hr],['Medical',(r,c)=>c.med],['Conveyance',(r,c)=>c.conv],['Other Allowance',(r)=>r.other],['Overtime / Bonus',(r)=>r.bonus]],
+ dedu:[['Absent Deduction',(r,c)=>c.absd],['Provident Fund',(r,c)=>c.pf],['Income Tax',(r)=>r.tax],['Loan / Advance',(r)=>r.loan],['Other Deduction',(r)=>r.od]]},
+Govt:{title:'Salary Sheet - Government Service',
+ rows:[{id:'G-001',name:'Karim Hossain',desig:'Office Assistant',grade:'Grade-10',basic:16000,other:0,bonus:0,lwp:0,gpf:800,wf:100,adv:0,tax:0}],
+ calc(r){const c={};c.hr=R(n(r.basic)*n(S.g_hr)/100);c.med=n(r.basic)?n(S.g_med):0;c.gross=n(r.basic)+c.hr+c.med+n(r.other)+n(r.bonus);
+  c.lwpd=R((c.gross-n(r.bonus))/D()*n(r.lwp));c.stamp=n(r.basic)?n(S.g_stamp):0;
+  c.ded=c.lwpd+n(r.gpf)+n(r.wf)+n(r.adv)+n(r.tax)+c.stamp;c.net=c.gross-c.ded;return c},
+ cols:[['id','ID','t'],['name','Name','t'],['desig','Designation','t'],['grade','Grade','t'],['basic','Basic Pay','i'],['hr','House Rent','c'],['med','Medical','c'],
+ ['other','Education / Other','i'],['bonus','Festival / Bonus','i'],['gross','Gross','c'],['lwp','Days LWP','i'],['lwpd','LWP Deduction','c'],['gpf','GPF','i'],
+ ['wf','Welfare / Insurance','i'],['adv','Advance (House bldg etc.)','i'],['tax','Income Tax','i'],['stamp','Revenue Stamp','c'],['ded','Total Deduction','c'],['net','Net Pay','c']],
+ earn:[['Basic Pay',(r)=>r.basic],['House Rent',(r,c)=>c.hr],['Medical',(r,c)=>c.med],['Education / Other',(r)=>r.other],['Festival / Bonus',(r)=>r.bonus]],
+ dedu:[['LWP Deduction',(r,c)=>c.lwpd],['GPF',(r)=>r.gpf],['Welfare / Group Insurance',(r)=>r.wf],['Advance',(r)=>r.adv],['Income Tax',(r)=>r.tax],['Revenue Stamp',(r,c)=>c.stamp]]}};
+let cur='Private';
+try{const x=JSON.parse(localStorage.getItem('ssg1')||'null');if(x){Object.assign(S,x.S);T.Private.rows=x.p;T.Govt.rows=x.g}}catch(e){}
+function save(){try{localStorage.setItem('ssg1',JSON.stringify({S,p:T.Private.rows,g:T.Govt.rows}))}catch(e){}}
+const sum=(t,k,c)=>T[t].rows.reduce((a,r)=>a+n(c?T[t].calc(r)[k]:r[k]),0);
+
+function renderSet(){$('#set').innerHTML=SL.map(([k,l,t])=>`<div><label>${l}</label><input data-s="${k}" type="${t=='n'?'number':'text'}" value="${String(S[k]).replace(/"/g,'&quot;')}"></div>`).join('')}
+function head(){if(cur=='Tax')return;$('#ph1').textContent=S.org;$('#ph2').textContent=T[cur].title+' | Month: '+S.month}
+function render(){
+ const t=T[cur];head();
+ let h='<tr><th>Sl</th>'+t.cols.map(c=>`<th>${c[1]}</th>`).join('')+'<th class="act">Action</th></tr>';
+ t.rows.forEach((r,i)=>{h+=`<tr><td>${i+1}</td>`+t.cols.map(([k,l,ty])=>ty=='c'?`<td data-r="${i}" data-k="${k}"></td>`:
+  `<td class="${ty=='t'?'l':''}"><input data-r="${i}" data-k="${k}" type="${ty=='t'?'text':'number'}" min="0" value="${r[k]??''}"></td>`).join('')+
+  `<td class="act"><button class="o" data-slip="${i}">Slip</button> <button class="o" data-del="${i}">&#10005;</button></td></tr>`});
+ const first=t.cols.findIndex(c=>c[2]!='t');
+ h+='<tr class="tot"><td colspan="'+(first+1)+'">TOTAL</td>'+t.cols.slice(first).map(([k,l,ty])=>ty=='t'?'<td></td>':`<td data-tk="${k}" data-ty="${ty}"></td>`).join('')+'<td class="act"></td></tr>';
+ $('#tb').innerHTML=h;refresh();
+ $('#sheetsig').style.display='';$('#sheetsig').innerHTML='<span>Prepared by: ______________</span><span>Checked by: ______________</span><span>Approved by: ______________</span>';
+}
+function refresh(){if(cur=='Tax'){cert();return}const t=T[cur];
+ document.querySelectorAll('#tb td[data-k]').forEach(e=>{e.textContent=fmt(t.calc(t.rows[e.dataset.r])[e.dataset.k])});
+ document.querySelectorAll('#tb td[data-tk]').forEach(e=>{e.textContent=fmt(sum(cur,e.dataset.tk,e.dataset.ty=='c'))});}
+function slip(tp,r){const t=T[tp],c=t.calc(r),ln=a=>a.map(([l,f])=>[l,n(f(r,c))]);
+ const E=ln(t.earn),Dd=ln(t.dedu),m=Math.max(E.length,Dd.length);let rows='';
+ for(let i=0;i<m;i++)rows+=`<tr><td class="l">${E[i]?E[i][0]:''}</td><td>${E[i]?fmt(E[i][1]):''}</td><td class="l">${Dd[i]?Dd[i][0]:''}</td><td>${Dd[i]?fmt(Dd[i][1]):''}</td></tr>`;
+ const e=s=>String(s??'').replace(/[&<>]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[x]));
+ return `<div class="slip"><h3>${e(S.org)}</h3><p>Payslip - ${e(S.month)}</p>
+ <p style="text-align:left;margin-top:8px"><b>Name:</b> ${e(r.name)} &nbsp; <b>ID:</b> ${e(r.id)} &nbsp; <b>Designation:</b> ${e(r.desig)}${r.grade?' &nbsp; <b>Grade:</b> '+e(r.grade):''}</p>
+ <table><tr><th>Earnings</th><th>Tk</th><th>Deductions</th><th>Tk</th></tr>${rows}
+ <tr class="tot"><td class="l">Gross</td><td>${fmt(c.gross)}</td><td class="l">Total Deduction</td><td>${fmt(c.ded)}</td></tr>
+ <tr class="tot"><td class="l" colspan="3">NET PAYABLE</td><td>${fmt(c.net)}</td></tr></table>
+ <div class="sig"><span>Employee signature</span><span>Authorized signature</span></div></div>`}
+function showSlips(list){$('#slipbox').innerHTML=list.map(r=>slip(cur,r)).join('');$('#ov').classList.add('show');document.body.classList.add('slipmode')}
+function closeSlips(){$('#ov').classList.remove('show');document.body.classList.remove('slipmode')}
+
+document.addEventListener('input',e=>{const d=e.target.dataset;
+ if(d.x){X[d.x]=e.target.value;cert();saveX();return}
+ if(d.s){S[d.s]=e.target.type=='number'?e.target.value:e.target.value;head();refresh();save();return}
+ if(d.r!==undefined&&d.k){const col=T[cur].cols.find(c=>c[0]==d.k);T[cur].rows[d.r][d.k]=col[2]=='t'?e.target.value:e.target.value;refresh();save()}});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+ if(d.t){cur=d.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x==b));const tx=cur=='Tax';$('.sheetwrap').style.display=tx?'none':'';$('#pdfnote').style.display=tx?'none':'';['add','allslips','prsheet'].forEach(i=>$('#'+i).style.display=tx?'none':'');$('#taxpane').style.display=tx?'':'none';tx?taxInit():render()}
+ else if(d.slip!==undefined)showSlips([T[cur].rows[d.slip]]);
+ else if(d.del!==undefined){if(confirm('Remove this employee?')){T[cur].rows.splice(d.del,1);render();save()}}});
+$('#add').onclick=()=>{T[cur].rows.push({});render();save()};
+$('#allslips').onclick=()=>showSlips(T[cur].rows.filter(r=>n(r.basic)));
+$('#prsheet').onclick=()=>window.print();$('#prslip').onclick=()=>window.print();$('#close').onclick=closeSlips;
+const esc=s=>String(s??'').replace(/[&<>"]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x]));
+const TF=[['id','Employee ID','t'],['name','Employee Name','t'],['desig','Designation','t'],['branch','Office / Branch','t'],['zone','Zone / Department','t'],['tin','TIN No','t'],['nid','National ID (NID)','t'],['gender','Gender','t'],['ay','Assessment Year','t'],['iy','Income Year','t'],['fy','Financial Year','t'],
+['i1','1 Basic Salary','n'],['i2','2 House Rent','n'],['i3','3 Medical','n'],['i4','4 Special Benefit / Dearness','n'],['i5','5 Washing','n'],['i6','6 Education / Other','n'],['i7','7 Bonus (Festival+Others+Noboborsho)','n'],['i8','8 Leave Encashment','n'],['i9','9 Leave Encashment (Retirement)','n'],['i10','10 Overtime','n'],['i11','11 Lunch','n'],['i12','12 Transport','n'],['i13','13 Other Allowances','n'],['i14','14 Employee Welfare Fund Receipt','n'],
+['pfi','15 Interest on Provident Fund','n'],['grat','16 Gratuity','n'],['pens','17 Pension','n'],
+['v1','Invest: Self contribution PF/GPF','n'],['v2','Invest: DPS / GPS','n'],['v3','Invest: Life insurance premium','n'],['v4','Invest: Employee welfare fund','n'],['v5','Invest: Sanchayapatra / Govt. securities','n'],['v6','Invest: Shares / Stocks','n'],['v7','Invest: Other eligible','n'],['tds','Tax already deducted / paid (Tk)','n']];
+const IT=['Basic Salary','House Rent Allowance','Medical Allowance','Special Benefit / Dearness Allowance','Washing Allowance','Education Allowance','Bonus (Festival + Others + Noboborsho)','Leave Encashment','Leave Encashment (Retirement)','Overtime','Lunch Allowance','Transport Facility','Other Allowances','Employee Welfare Fund Receipt'];
+const VN=['Self Contribution - Provident Fund','DPS / GPS','Life Insurance Premium','Contribution - Employee Welfare Fund','Sanchayapatra / Govt. Securities','Shares / Stocks / Debentures','Other Eligible Investments'];
+let X={gender:'Male',ay:'2026-27',iy:'01 July 2025 - 30 June 2026',fy:'2025-2026'};
+try{Object.assign(X,JSON.parse(localStorage.getItem('ssg1x')||'{}'))}catch(e){}
+const saveX=()=>{try{localStorage.setItem('ssg1x',JSON.stringify(X))}catch(e){}};
+function pick(){const v=$('#emp').value;if(!v)return;const [tp,i]=v.split('|'),r=T[tp].rows[i];if(!r)return;const c=T[tp].calc(r),p=tp=='Private',m=x=>n(x)*12;
+ for(let k=1;k<=14;k++)X['i'+k]=0;for(let k=1;k<=7;k++)X['v'+k]=0;X.pfi=X.grat=X.pens=0;
+ Object.assign(X,{sel:v,id:r.id||'',name:r.name||'',desig:r.desig||'',i1:m(r.basic),i2:m(c.hr),i3:m(c.med),i6:m(r.other),i7:n(r.bonus),i12:p?m(c.conv):0,v1:m(p?c.pf:r.gpf),v4:p?0:m(r.wf),tds:m(r.tax)})}
+function taxInit(){const o=[];['Private','Govt'].forEach(tp=>T[tp].rows.forEach((r,i)=>o.push(`<option value="${tp}|${i}">${tp} - ${esc(r.name||'(no name)')}</option>`)));
+ $('#emp').innerHTML=o.join('');if(X.sel)$('#emp').value=X.sel;if(X.i1===undefined)pick();renderTF();cert()}
+function renderTF(){$('#tf').innerHTML=TF.map(([k,l,t])=>`<div><label>${l}</label><input data-x="${k}" type="${t=='n'?'number':'text'}" value="${esc(X[k]??(t=='n'?0:''))}"></div>`).join('')}
+function cert(){
+ const g=k=>n(X[k]);let s14=0;for(let k=1;k<=14;k++)s14+=g('i'+k);
+ const ex=Math.min(R(s14/3),n(S.ex_c)),tx=s14-ex,s17=g('pfi')+g('grat')+g('pens');
+ const A=IT.map((nm,i)=>`<tr><td>${i+1}</td><td class="l">${nm}</td><td>${fmt(g('i'+(i+1)))}</td>`+(i?'':`<td rowspan="14" style="text-align:center">1/3rd of Items 1-14<br>OR<br>Tk. ${fmt(S.ex_c)}<br>whichever is lower</td><td rowspan="14"></td>`)+'</tr>').join('');
+ const B=[['Interest on Provident Fund','pfi'],['Gratuity','grat'],['Pension','pens']].map(([l,k],i)=>`<tr><td>${15+i}</td><td class="l">${l}</td><td>${fmt(g(k))}</td><td>${fmt(g(k))}</td><td>-</td></tr>`).join('');
+ let left=tx,tl=0,SR='';
+ [[n(S.t_free),0],[n(S.a1),S.r1],[n(S.a2),S.r2],[n(S.a3),S.r3],[n(S.a4),S.r4],[Infinity,S.r5]].forEach(([a,rt],i)=>{const m=Math.max(0,Math.min(left,a)),t=R(m*n(rt)/100);left-=m;tl+=t;
+  if(m>0||i==0)SR+=`<tr><td class="l">${i==0?'Up to '+fmt(a)+' ('+esc(X.gender||'General')+')':a==Infinity?'Balance':'Next '+fmt(a)}</td><td>${fmt(m)}</td><td>${n(rt)}%</td><td>${t?fmt(t):'-'}</td></tr>`});
+ let inv=0;for(let k=1;k<=7;k++)inv+=g('v'+k);
+ const reb=Math.min(R(tx*n(S.rb_i)/100),R(inv*n(S.rb_v)/100),n(S.rb_c),tl),net=tl-reb,pay=tx>n(S.t_free)?Math.max(net,n(S.mt)):net,fin=Math.max(0,pay-g('tds'));
+ const V=VN.map((l,i)=>`<tr><td>${i+1}</td><td class="l">${l}</td><td>${fmt(g('v'+(i+1)))}</td></tr>`).join('');
+ const I=(l,v)=>`<div><small>${l}</small><b>${v}</b></div>`;
+ const Sm=(l,v,c)=>`<tr${c?' class="'+c+'"':''}><td class="l">${l}</td><td>${v}</td></tr>`;
+ $('#certout').innerHTML=`<div class="cert"><h3>${esc(S.org)}</h3><p><b><u>Income Tax Calculation Certificate</u></b></p>
+ <p>Assessment Year ${esc(X.ay)} &middot; Income Year: ${esc(X.iy)} &middot; Under Section 32-34, ITA 2023</p>
+ <p style="text-align:right">Financial Year: <b>${esc(X.fy)}</b></p>
+ <div class="sec">Assessee Information</div>
+ <div class="info">${I('Employee Name',esc(X.name))}${I('Employee ID',esc(X.id))}${I('Designation',esc(X.desig))}${I('Office / Branch',esc(X.branch))}${I('TIN No',esc(X.tin))}${I('Zone / Department',esc(X.zone))}${I('National ID (NID)',esc(X.nid))}${I('Gender',esc(X.gender))}${I('Net Taxable Income','Tk. '+fmt(tx))}</div>
+ <div class="sec">I. Particulars of Salary Income (Annual - 12 months)</div>
+ <table><tr><th>#</th><th>Particulars</th><th>Amount (Tk.)</th><th>Exempted (Tk.)</th><th>Taxable (Tk.)</th></tr>${A}
+ <tr class="tot"><td colspan="2" class="l">Sub-total (Items 1-14)</td><td>${fmt(s14)}</td><td>${fmt(ex)}</td><td>${fmt(tx)}</td></tr>${B}
+ <tr class="tot"><td colspan="2" class="l">Sub-total (Items 15-17)</td><td>${fmt(s17)}</td><td>${fmt(s17)}</td><td>-</td></tr>
+ <tr class="tot"><td colspan="2" class="l">Grand Total</td><td>${fmt(s14+s17)}</td><td>${fmt(ex+s17)}</td><td>${fmt(tx)}</td></tr></table>
+ <div class="two"><div><div class="sec">II. Tax Liability Calculation</div><table><tr><th>Income Slab</th><th>Amount (Tk.)</th><th>Rate</th><th>Tax (Tk.)</th></tr>${SR}<tr class="tot"><td class="l" colspan="3">Total Tax Liability</td><td>${fmt(tl)}</td></tr></table></div>
+ <div><div class="sec">III. Investment Tax Rebate</div><table><tr><th>#</th><th>Particulars</th><th>Amount (Tk.)</th></tr>${V}<tr class="tot"><td colspan="2" class="l">Total Eligible Investment</td><td>${fmt(inv)}</td></tr></table></div></div>
+ <div class="sec">IV. Tax Summary</div><table>${Sm('Total Tax Liability Before Rebate',fmt(tl))}${Sm('Less: Tax Rebate (min of '+n(S.rb_i)+'% of taxable income / '+n(S.rb_v)+'% of eligible investment / Tk. '+fmt(S.rb_c)+')','('+fmt(reb)+')')}${Sm('Net Tax Payable',fmt(net))}${Sm('Minimum Tax Tk. '+fmt(S.mt)+' - applies when taxable income &gt; tax-free slab and net tax &lt; minimum',fmt(S.mt))}${Sm('Tax Payable (After Rebate &amp; Minimum Tax)',fmt(pay),'tot')}${Sm('Less: Tax already deducted / paid',fmt(g('tds')))}${Sm('Net Tax Payable (Balance)',fmt(fin),'blk')}</table>
+ <div class="sig"><span>Authorised Signatory</span><span>Assessee Signature</span></div></div>`}
+$('#emp').onchange=$('#refill').onclick=()=>{pick();renderTF();cert();saveX()};$('#prcert').onclick=()=>window.print();
+renderSet();render();
+</script>
+</body></html>
