@@ -37,6 +37,11 @@ tr.tot td{background:var(--tot);font-weight:bold}
 .sheetwrap{page:sheet}.ph{display:none;text-align:center;margin-bottom:8px}
 select{width:100%;padding:5px 6px;border:1px solid var(--bd);border-radius:5px;background:var(--inp);color:var(--fg);font:inherit}
 #certout{overflow-x:auto}
+#fm{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);overflow:auto;padding:16px;z-index:8}#fm.show{display:block}
+.fcard{max-width:760px;margin:0 auto;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:16px}
+.fcard h2{margin:0 0 10px;font-size:16px}.fcard .f{margin-bottom:10px}.fcard label{font-size:12px;color:var(--fg);margin-bottom:3px}
+.fcard .ex{display:grid;grid-template-columns:2fr 1fr auto;gap:6px;margin-bottom:6px}
+label.chk{display:flex;align-items:center;gap:6px}label.chk input{width:auto}
 .cert{background:#fff;color:#000;border:1px solid #444;padding:14px;max-width:760px;min-width:640px;margin:0 auto;font-size:11px;page:slip}
 .cert h3{margin:0;text-align:center;font-size:20px}.cert p{margin:2px 0;text-align:center;font-size:11px}
 .cert table{margin:4px 0;font-size:11px}.cert td,.cert th{border-color:#555;color:#000;padding:2px 5px;white-space:normal}.cert th{background:#1f3864;color:#fff}
@@ -92,6 +97,7 @@ select{width:100%;padding:5px 6px;border:1px solid var(--bd);border-radius:5px;b
  </div>
 </div>
 
+<div id="fm" class="noprint"><div class="fcard" id="fbox"></div></div>
 <div id="ov"><div class="slips">
  <div class="bar noprint"><button id="prslip">Print / PDF</button><button class="o" id="close" style="background:var(--card)">Close</button></div>
  <div id="slipbox"></div>
@@ -104,26 +110,27 @@ const SL=[['org','Organization / Office','t'],['month','Salary month','t'],['day
 ['p_hr','Private: House rent %','n'],['p_med','Private: Medical (Tk)','n'],['p_conv','Private: Conveyance (Tk)','n'],['p_pf','Private: PF % of basic','n'],
 ['g_hr','Govt: House rent %','n'],['g_med','Govt: Medical (Tk)','n'],['g_stamp','Govt: Revenue stamp (Tk)','n'],['t_free','Tax: free slab (Tk, male/general)','n'],['a1','Tax: slab 2 amount (Tk)','n'],['r1','Tax: slab 2 rate %','n'],['a2','Tax: slab 3 amount (Tk)','n'],['r2','Tax: slab 3 rate %','n'],['a3','Tax: slab 4 amount (Tk)','n'],['r3','Tax: slab 4 rate %','n'],['a4','Tax: slab 5 amount (Tk)','n'],['r4','Tax: slab 5 rate %','n'],['r5','Tax: balance rate %','n'],['rb_i','Rebate: % of taxable income','n'],['rb_v','Rebate: % of eligible investment','n'],['rb_c','Rebate: max cap (Tk)','n'],['mt','Minimum tax (Tk)','n'],['ex_c','Exempt cap on items 1-14 (Tk)','n']];
 const D=()=>n(S.days)||1;
+const ov=(v,d)=>(v===undefined||v===null||v==='')?d:n(v),ex=r=>(r.extra||[]).reduce((a,x)=>a+n(x.a),0);
 const T={
 Private:{title:'Salary Sheet - Private Service',
  rows:[{id:'E-001',name:'Rahim Uddin',desig:'Executive',basic:30000,other:2000,bonus:1500,abs:0,tax:0,loan:1000,od:0}],
- calc(r){const c={};c.hr=R(n(r.basic)*n(S.p_hr)/100);c.med=n(r.basic)?n(S.p_med):0;c.conv=n(r.basic)?n(S.p_conv):0;
-  c.gross=n(r.basic)+c.hr+c.med+c.conv+n(r.other)+n(r.bonus);c.absd=R((c.gross-n(r.bonus))/D()*n(r.abs));
+ calc(r){const c={};c.hr=ov(r.hr,R(n(r.basic)*n(S.p_hr)/100));c.med=ov(r.med,n(r.basic)?n(S.p_med):0);c.conv=ov(r.conv,n(r.basic)?n(S.p_conv):0);c.extra=ex(r);
+  c.gross=n(r.basic)+c.hr+c.med+c.conv+c.extra+n(r.other)+n(r.bonus);c.absd=R((c.gross-n(r.bonus))/D()*n(r.abs));
   c.pf=R(n(r.basic)*n(S.p_pf)/100);c.ded=c.absd+c.pf+n(r.tax)+n(r.loan)+n(r.od);c.net=c.gross-c.ded;return c},
- cols:[['id','ID','t'],['name','Name','t'],['desig','Designation','t'],['basic','Basic','i'],['hr','House Rent','c'],['med','Medical','c'],['conv','Conveyance','c'],
- ['other','Other Allowance','i'],['bonus','Overtime / Bonus','i'],['gross','Gross','c'],['abs','Days Absent','i'],['absd','Absent Deduction','c'],['pf','Provident Fund','c'],
+ cols:[['id','ID','t'],['name','Name','t'],['desig','Designation','t'],['tin','TIN','t'],['phone','Phone','t'],['basic','Basic','i'],['hr','House Rent','c'],['med','Medical','c'],['conv','Conveyance','c'],
+ ['extra','Additional Allowances','c'],['other','Other Allowance','i'],['bonus','Festival Bonus','i'],['gross','Gross','c'],['abs','Days Absent','i'],['absd','Absent Deduction','c'],['pf','Provident Fund','c'],
  ['tax','Income Tax (TDS)','i'],['loan','Loan / Advance','i'],['od','Other Deduction','i'],['ded','Total Deduction','c'],['net','Net Pay','c']],
- earn:[['Basic',(r)=>r.basic],['House Rent',(r,c)=>c.hr],['Medical',(r,c)=>c.med],['Conveyance',(r,c)=>c.conv],['Other Allowance',(r)=>r.other],['Overtime / Bonus',(r)=>r.bonus]],
+ earn:[['Basic',(r)=>r.basic],['House Rent',(r,c)=>c.hr],['Medical',(r,c)=>c.med],['Conveyance',(r,c)=>c.conv],['Additional Allowances',(r,c)=>c.extra],['Other Allowance',(r)=>r.other],['Festival Bonus',(r)=>r.bonus]],
  dedu:[['Absent Deduction',(r,c)=>c.absd],['Provident Fund',(r,c)=>c.pf],['Income Tax',(r)=>r.tax],['Loan / Advance',(r)=>r.loan],['Other Deduction',(r)=>r.od]]},
 Govt:{title:'Salary Sheet - Government Service',
  rows:[{id:'G-001',name:'Karim Hossain',desig:'Office Assistant',grade:'Grade-10',basic:16000,other:0,bonus:0,lwp:0,gpf:800,wf:100,adv:0,tax:0}],
- calc(r){const c={};c.hr=R(n(r.basic)*n(S.g_hr)/100);c.med=n(r.basic)?n(S.g_med):0;c.gross=n(r.basic)+c.hr+c.med+n(r.other)+n(r.bonus);
+ calc(r){const c={};c.hr=ov(r.hr,R(n(r.basic)*n(S.g_hr)/100));c.med=ov(r.med,n(r.basic)?n(S.g_med):0);c.conv=ov(r.conv,0);c.extra=ex(r);c.gross=n(r.basic)+c.hr+c.med+c.conv+c.extra+n(r.other)+n(r.bonus);
   c.lwpd=R((c.gross-n(r.bonus))/D()*n(r.lwp));c.stamp=n(r.basic)?n(S.g_stamp):0;
   c.ded=c.lwpd+n(r.gpf)+n(r.wf)+n(r.adv)+n(r.tax)+c.stamp;c.net=c.gross-c.ded;return c},
- cols:[['id','ID','t'],['name','Name','t'],['desig','Designation','t'],['grade','Grade','t'],['basic','Basic Pay','i'],['hr','House Rent','c'],['med','Medical','c'],
+ cols:[['id','ID','t'],['name','Name','t'],['desig','Designation','t'],['grade','Grade','t'],['tin','TIN','t'],['phone','Phone','t'],['basic','Basic Pay','i'],['hr','House Rent','c'],['med','Medical','c'],['conv','Conveyance','c'],['extra','Additional Allowances','c'],
  ['other','Education / Other','i'],['bonus','Festival / Bonus','i'],['gross','Gross','c'],['lwp','Days LWP','i'],['lwpd','LWP Deduction','c'],['gpf','GPF','i'],
  ['wf','Welfare / Insurance','i'],['adv','Advance (House bldg etc.)','i'],['tax','Income Tax','i'],['stamp','Revenue Stamp','c'],['ded','Total Deduction','c'],['net','Net Pay','c']],
- earn:[['Basic Pay',(r)=>r.basic],['House Rent',(r,c)=>c.hr],['Medical',(r,c)=>c.med],['Education / Other',(r)=>r.other],['Festival / Bonus',(r)=>r.bonus]],
+ earn:[['Basic Pay',(r)=>r.basic],['House Rent',(r,c)=>c.hr],['Medical',(r,c)=>c.med],['Conveyance',(r,c)=>c.conv],['Additional Allowances',(r,c)=>c.extra],['Education / Other',(r)=>r.other],['Festival Bonus',(r)=>r.bonus]],
  dedu:[['LWP Deduction',(r,c)=>c.lwpd],['GPF',(r)=>r.gpf],['Welfare / Group Insurance',(r)=>r.wf],['Advance',(r)=>r.adv],['Income Tax',(r)=>r.tax],['Revenue Stamp',(r,c)=>c.stamp]]}};
 let cur='Private';
 try{const x=JSON.parse(localStorage.getItem('ssg1')||'null');if(x){Object.assign(S,x.S);T.Private.rows=x.p;T.Govt.rows=x.g}}catch(e){}
@@ -137,7 +144,7 @@ function render(){
  let h='<tr><th>Sl</th>'+t.cols.map(c=>`<th>${c[1]}</th>`).join('')+'<th class="act">Action</th></tr>';
  t.rows.forEach((r,i)=>{h+=`<tr><td>${i+1}</td>`+t.cols.map(([k,l,ty])=>ty=='c'?`<td data-r="${i}" data-k="${k}"></td>`:
   `<td class="${ty=='t'?'l':''}"><input data-r="${i}" data-k="${k}" type="${ty=='t'?'text':'number'}" min="0" value="${r[k]??''}"></td>`).join('')+
-  `<td class="act"><button class="o" data-slip="${i}">Slip</button> <button class="o" data-del="${i}">&#10005;</button></td></tr>`});
+  `<td class="act"><button class="o" data-edit="${i}">Edit</button> <button class="o" data-slip="${i}">Slip</button> <button class="o" data-del="${i}">&#10005;</button></td></tr>`});
  const first=t.cols.findIndex(c=>c[2]!='t');
  h+='<tr class="tot"><td colspan="'+(first+1)+'">TOTAL</td>'+t.cols.slice(first).map(([k,l,ty])=>ty=='t'?'<td></td>':`<td data-tk="${k}" data-ty="${ty}"></td>`).join('')+'<td class="act"></td></tr>';
  $('#tb').innerHTML=h;refresh();
@@ -150,8 +157,8 @@ function slip(tp,r){const t=T[tp],c=t.calc(r),ln=a=>a.map(([l,f])=>[l,n(f(r,c))]
  const E=ln(t.earn),Dd=ln(t.dedu),m=Math.max(E.length,Dd.length);let rows='';
  for(let i=0;i<m;i++)rows+=`<tr><td class="l">${E[i]?E[i][0]:''}</td><td>${E[i]?fmt(E[i][1]):''}</td><td class="l">${Dd[i]?Dd[i][0]:''}</td><td>${Dd[i]?fmt(Dd[i][1]):''}</td></tr>`;
  const e=s=>String(s??'').replace(/[&<>]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[x]));
- return `<div class="slip"><h3>${e(S.org)}</h3><p>Payslip - ${e(S.month)}</p>
- <p style="text-align:left;margin-top:8px"><b>Name:</b> ${e(r.name)} &nbsp; <b>ID:</b> ${e(r.id)} &nbsp; <b>Designation:</b> ${e(r.desig)}${r.grade?' &nbsp; <b>Grade:</b> '+e(r.grade):''}</p>
+ return `<div class="slip"><h3>${e(r.emp||S.org)}</h3><p>Payslip - ${e(S.month)}</p>
+ <p style="text-align:left;margin-top:8px"><b>Name:</b> ${e(r.name)} &nbsp; <b>ID:</b> ${e(r.id)} &nbsp; <b>Designation:</b> ${e(r.desig)}${r.grade?' &nbsp; <b>Grade:</b> '+e(r.grade):''}${r.tin?' &nbsp; <b>TIN:</b> '+e(r.tin):''}${r.phone?' &nbsp; <b>Phone:</b> '+e(r.phone):''}${r.shd?' &nbsp; (Shareholder Director)':''}</p>
  <table><tr><th>Earnings</th><th>Tk</th><th>Deductions</th><th>Tk</th></tr>${rows}
  <tr class="tot"><td class="l">Gross</td><td>${fmt(c.gross)}</td><td class="l">Total Deduction</td><td>${fmt(c.ded)}</td></tr>
  <tr class="tot"><td class="l" colspan="3">NET PAYABLE</td><td>${fmt(c.net)}</td></tr></table>
@@ -160,14 +167,17 @@ function showSlips(list){$('#slipbox').innerHTML=list.map(r=>slip(cur,r)).join('
 function closeSlips(){$('#ov').classList.remove('show');document.body.classList.remove('slipmode')}
 
 document.addEventListener('input',e=>{const d=e.target.dataset;
+ if(d.f){const r=T[cur].rows[fi];r[d.f]=e.target.type=='checkbox'?e.target.checked:e.target.value;refresh();save();return}
+ if(d.xl!==undefined){T[cur].rows[fi].extra[d.xl].l=e.target.value;save();return}
+ if(d.xa!==undefined){T[cur].rows[fi].extra[d.xa].a=e.target.value;refresh();save();return}
  if(d.x){X[d.x]=e.target.value;cert();saveX();return}
  if(d.s){S[d.s]=e.target.type=='number'?e.target.value:e.target.value;head();refresh();save();return}
  if(d.r!==undefined&&d.k){const col=T[cur].cols.find(c=>c[0]==d.k);T[cur].rows[d.r][d.k]=col[2]=='t'?e.target.value:e.target.value;refresh();save()}});
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
  if(d.t){cur=d.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x==b));const tx=cur=='Tax';$('.sheetwrap').style.display=tx?'none':'';$('#pdfnote').style.display=tx?'none':'';['add','allslips','prsheet'].forEach(i=>$('#'+i).style.display=tx?'none':'');$('#taxpane').style.display=tx?'':'none';tx?taxInit():render()}
- else if(d.slip!==undefined)showSlips([T[cur].rows[d.slip]]);
+ else if(d.edit!==undefined)openForm(+d.edit);else if(d.xd!==undefined){T[cur].rows[fi].extra.splice(d.xd,1);renderForm();refresh();save()}else if(b.id=='xadd'){const r=T[cur].rows[fi];(r.extra=r.extra||[]).push({l:'',a:''});renderForm();save()}else if(b.id=='fback'){$('#fm').classList.remove('show');render();save()}else if(d.slip!==undefined)showSlips([T[cur].rows[d.slip]]);
  else if(d.del!==undefined){if(confirm('Remove this employee?')){T[cur].rows.splice(d.del,1);render();save()}}});
-$('#add').onclick=()=>{T[cur].rows.push({});render();save()};
+$('#add').onclick=()=>{T[cur].rows.push({});render();save();openForm(T[cur].rows.length-1)};
 $('#allslips').onclick=()=>showSlips(T[cur].rows.filter(r=>n(r.basic)));
 $('#prsheet').onclick=()=>window.print();$('#prslip').onclick=()=>window.print();$('#close').onclick=closeSlips;
 const esc=s=>String(s??'').replace(/[&<>"]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x]));
@@ -182,7 +192,7 @@ try{Object.assign(X,JSON.parse(localStorage.getItem('ssg1x')||'{}'))}catch(e){}
 const saveX=()=>{try{localStorage.setItem('ssg1x',JSON.stringify(X))}catch(e){}};
 function pick(){const v=$('#emp').value;if(!v)return;const [tp,i]=v.split('|'),r=T[tp].rows[i];if(!r)return;const c=T[tp].calc(r),p=tp=='Private',m=x=>n(x)*12;
  for(let k=1;k<=14;k++)X['i'+k]=0;for(let k=1;k<=7;k++)X['v'+k]=0;X.pfi=X.grat=X.pens=0;
- Object.assign(X,{sel:v,id:r.id||'',name:r.name||'',desig:r.desig||'',i1:m(r.basic),i2:m(c.hr),i3:m(c.med),i6:m(r.other),i7:n(r.bonus),i12:p?m(c.conv):0,v1:m(p?c.pf:r.gpf),v4:p?0:m(r.wf),tds:m(r.tax)})}
+ Object.assign(X,{sel:v,id:r.id||'',name:r.name||'',desig:r.desig||'',i1:m(r.basic),i2:m(c.hr),i3:m(c.med),i6:m(r.other),i7:n(r.bonus),i12:m(c.conv),tin:r.tin||'',v1:m(p?c.pf:r.gpf),v4:p?0:m(r.wf),tds:m(r.tax)});(r.extra||[]).forEach(x=>{const l=String(x.l||''),k=/dearness|special/i.test(l)?'i4':/wash/i.test(l)?'i5':/educ/i.test(l)?'i6':/lunch/i.test(l)?'i11':/overtime/i.test(l)?'i10':/transport/i.test(l)?'i12':'i13';X[k]=n(X[k])+n(x.a)*12})}
 function taxInit(){const o=[];['Private','Govt'].forEach(tp=>T[tp].rows.forEach((r,i)=>o.push(`<option value="${tp}|${i}">${tp} - ${esc(r.name||'(no name)')}</option>`)));
  $('#emp').innerHTML=o.join('');if(X.sel)$('#emp').value=X.sel;if(X.i1===undefined)pick();renderTF();cert()}
 function renderTF(){$('#tf').innerHTML=TF.map(([k,l,t])=>`<div><label>${l}</label><input data-x="${k}" type="${t=='n'?'number':'text'}" value="${esc(X[k]??(t=='n'?0:''))}"></div>`).join('')}
@@ -214,6 +224,25 @@ function cert(){
  <div class="sec">IV. Tax Summary</div><table>${Sm('Total Tax Liability Before Rebate',fmt(tl))}${Sm('Less: Tax Rebate (min of '+n(S.rb_i)+'% of taxable income / '+n(S.rb_v)+'% of eligible investment / Tk. '+fmt(S.rb_c)+')','('+fmt(reb)+')')}${Sm('Net Tax Payable',fmt(net))}${Sm('Minimum Tax Tk. '+fmt(S.mt)+' - applies when taxable income &gt; tax-free slab and net tax &lt; minimum',fmt(S.mt))}${Sm('Tax Payable (After Rebate &amp; Minimum Tax)',fmt(pay),'tot')}${Sm('Less: Tax already deducted / paid',fmt(g('tds')))}${Sm('Net Tax Payable (Balance)',fmt(fin),'blk')}</table>
  <div class="sig"><span>Authorised Signatory</span><span>Assessee Signature</span></div></div>`}
 $('#emp').onchange=$('#refill').onclick=()=>{pick();renderTF();cert();saveX()};$('#prcert').onclick=()=>window.print();
+let fi=0;
+const DL='<datalist id="dl">'+['Special Benefit / Dearness Allowance','Washing Allowance','Education Allowance','Lunch Allowance','Transport Facility','Overtime','Leave Encashment','Other Allowances'].map(x=>`<option value="${x}">`).join('')+'</datalist>';
+function openForm(i){fi=i;renderForm();$('#fm').classList.add('show')}
+function renderForm(){const r=T[cur].rows[fi],p=cur=='Private';if(!r)return;
+ const f=(k,l,t='text',ph='')=>`<div class="f"><label>${l}</label><input data-f="${k}" type="${t}" value="${esc(r[k]??'')}" placeholder="${esc(ph)}"></div>`;
+ $('#fbox').innerHTML=`<h2>Income from Employment</h2>
+ <div class="f"><label>Employment Type</label><select id="et"><option value="Private"${p?' selected':''}>Private/Other than Government Pay Scale</option><option value="Govt"${p?'':' selected'}>Government Pay Scale</option></select></div>
+ ${f('emp','Name of the Employer','text',S.org)}${f('name','Employee Name')}${f('id','Employee ID')}${f('desig','Designation')}
+ <div class="f"><label class="chk"><input type="checkbox" data-f="shd"${r.shd?' checked':''}> Shareholder Director</label></div>
+ ${f('tin','TIN')}${f('phone','Phone Number','tel')}${p?'':f('grade','Grade')}
+ <h2 style="margin-top:14px">Particulars</h2>
+ ${f('basic','Basic Salary','number')}${f('hr','House Rent Allowance','number','Auto: '+n(p?S.p_hr:S.g_hr)+'% of basic')}${f('med','Medical Allowance','number','Auto (Settings)')}${f('conv','Conveyance Allowance','number',p?'Auto (Settings)':'0')}${f('bonus','Festival Bonus','number')}${f('other',p?'Other Allowance':'Education / Other Allowance','number')}
+ ${(r.extra||[]).map((x,i)=>`<div class="ex"><input data-xl="${i}" list="dl" placeholder="Allowance name" value="${esc(x.l)}"><input data-xa="${i}" type="number" placeholder="Amount" value="${esc(x.a)}"><button class="o" data-xd="${i}">&#10005;</button></div>`).join('')}
+ ${DL}<button class="o" id="xadd">+ Add More</button>
+ <h2 style="margin-top:14px">Deductions</h2>
+ ${p?f('abs','Days Absent','number')+f('tax','Income Tax (TDS)','number')+f('loan','Loan / Advance','number')+f('od','Other Deduction','number'):f('lwp','Days LWP','number')+f('gpf','GPF','number')+f('wf','Welfare Fund / Group Insurance','number')+f('adv','Advance (House building etc.)','number')+f('tax','Income Tax','number')}
+ <div class="bar" style="margin-top:12px"><button id="fback">&larr; Back</button></div>`}
+document.addEventListener('change',e=>{if(e.target.id!='et')return;const to=e.target.value;if(to==cur)return;const r=T[cur].rows.splice(fi,1)[0];T[to].rows.push(r);cur=to;fi=T[to].rows.length-1;
+ document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.t==cur));render();renderForm();save()});
 renderSet();render();
 </script>
 </body></html>
